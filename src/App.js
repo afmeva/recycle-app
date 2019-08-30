@@ -1,30 +1,49 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 
 import { BrowserBarcodeReader } from '@zxing/library'
 import image from './code-4.jpeg'
 
-const init = async () => {
-  const codeReader = new BrowserBarcodeReader()
-  const img = document.getElementById('img')
+const codeReader = new BrowserBarcodeReader()
 
-  console.log(img)
+function useVideo() {
+  const [deviceId, setDeviceId] = useState('')
+  const [text, setText] = useState('')
 
-  try {
-    const result = await codeReader.decodeFromImage(img)
-    console.log(result)
-  } catch (err) {
-    console.error(err)
+  async function onStart() {
+    const { newText } = await codeReader.decodeOnceFromVideoDevice(
+      deviceId,
+      'video'
+    )
+    setText(newText)
+  }
+
+  function init() {
+    return async () => {
+      const [{ deviceId }] = await codeReader.getVideoInputDevices()
+
+      setDeviceId(deviceId)
+    }
+  }
+
+  useEffect(init(), [])
+
+  return {
+    text,
+    onStart
   }
 }
 
 function App() {
-  useEffect(() => {
-    init()
-  }, [])
+  const { text, onStart } = useVideo()
+  console.log(useVideo())
+
   return (
     <div className="App">
-      <img id="img" src={image} />
+      <button onClick={onStart}>Start</button>
+      <img width="100" height="100" id="img" src={image} />
+
+      <b>{text}</b>
     </div>
   )
 }
